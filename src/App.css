@@ -31,3 +31,11 @@
     transform: rotate(360deg);
   }
 }
+
+.ReactModal__Overlay {
+  z-index: 1;
+}
+
+#root {
+  z-index: 2;
+}
