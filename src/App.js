@@ -33,6 +33,8 @@ class App extends Component {
   constructor(props) {
     super(props);
 
+    this.createDownloadableFile = this.createDownloadableFile.bind(this);
+    this.handleChange = this.handleChange.bind(this);
     this.handleBuy = this.handleBuy.bind(this);
     this.openModal = this.openModal.bind(this);
     this.afterOpenModal = this.afterOpenModal.bind(this);
@@ -40,7 +42,9 @@ class App extends Component {
 
     this.state = {
       modalIsOpen: false,
-      ethusdPrice: 240
+      ethusdPrice: 240,
+      decryptionKey: "",
+      downloadLink: null
     };
   }
 
@@ -104,7 +108,7 @@ class App extends Component {
     const decrypted = CryptoJS.AES.decrypt(cipherParams, derivedParams.key, {
       iv: derivedParams.iv
     });
-    return decrypted;
+    return decrypted.toString(CryptoJS.enc.Base64);
   }
 
   async downloadFile(password) {
@@ -112,16 +116,20 @@ class App extends Component {
     if (response.ok) {
       const blob = await response.blob();
       const wordArray = await this.blobToWordArray(blob);
-      console.log(wordArray);
       return this.decryptFile(wordArray, password);
     }
   }
 
   createDownloadableFile(fileName, content) {
-    let link = document.createElement("a");
-    link.download = fileName;
-    link.href = `data:application/octet-stream,${content}`;
-    return link;
+    const download = fileName;
+    const href = `data:image/jpeg;base64,${content}`;
+
+    const anchor = (
+      <a href={href} download={download}>
+        Download file here
+      </a>
+    );
+    this.setState({ downloadLink: anchor });
   }
 
   async createDecryptedFileLink(password) {
@@ -144,6 +152,10 @@ class App extends Component {
     });
   }
 
+  handleChange(e) {
+    this.setState({ decryptionKey: e.target.value });
+  }
+
   async componentWillMount() {
     this.metamaskConnect();
   }
@@ -155,7 +167,12 @@ class App extends Component {
   }
 
   render() {
-    const { ethusdPrice, modalIsOpen } = this.state;
+    const {
+      ethusdPrice,
+      modalIsOpen,
+      decryptionKey,
+      downloadLink
+    } = this.state;
     const filePrice = (
       Math.round(PRICE_OF_FILE * ethusdPrice * 100) / 100
     ).toFixed(2);
@@ -182,8 +199,17 @@ class App extends Component {
                 <span aria-hidden="true">&times;</span>
               </button>
               <form>
-                <input />
-                <button>Enter</button>
+                <input
+                  type="text"
+                  value={decryptionKey}
+                  onChange={this.handleChange}
+                />
+                {downloadLink}
+                <button
+                  onClick={() => this.createDecryptedFileLink(decryptionKey)}
+                >
+                  Enter
+                </button>
               </form>
             </Modal>
             <div className="row">
